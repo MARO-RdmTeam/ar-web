@@ -24,7 +24,7 @@ async function load(){
    الرمز نفسه مش مكتوب هنا، المكتوب بس بصمته (Hash).
    ولّد البصمة من صفحة make-code.html وحطها هنا بين العلامتين.
    لو فاضية، محدش يقدر يدخل. */
-const ADMIN_HASH = "";
+const ADMIN_HASH = "73e959a69bc73c588f770300c1a4daeb2b23a052b3251e35d724cbd735d9941c";
 const SALT = "ammar-taareeb-v1";
 async function sha(t){
   const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(SALT+t));
