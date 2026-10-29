@@ -22,28 +22,33 @@
   <input type="file" id="imp" accept=".json" hidden onchange="importData(this)">
 </div>
 
-<div class="wrap">
-  <header>
-    <div id="logoBox"></div>
-    <div class="rule"><span>✦</span></div>
-    <div class="tag" id="tagline"></div>
-    <a class="tg" id="tgLink" target="_blank" rel="noopener" style="display:none">تابعنا على تيليجرام</a>
-  </header>
-  <div class="search"><input id="q" placeholder="ابحث عن لعبة…" oninput="render()"></div>
-  <div class="grid" id="grid"></div>
-</div>
+<main id="home" class="view">
+  <div class="wrap">
+    <header>
+      <div id="logoBox"></div>
+      <div class="rule"><span>✦</span></div>
+      <div class="tag" id="tagline"></div>
+      <a class="tg" id="tgLink" target="_blank" rel="noopener" style="display:none">تابعنا على تيليجرام</a>
+    </header>
+    <div class="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <input id="q" placeholder="ابحث عن لعبة…" oninput="render()">
+    </div>
+    <div class="count" id="count"></div>
+    <div class="grid" id="grid"></div>
+  </div>
+</main>
 
-<footer>
-  <div id="foot"></div>
-</footer>
+<main id="game" class="view" hidden></main>
 
-<!-- نافذة عرض اللعبة -->
-<div class="modal" id="mView" onclick="if(event.target===this)closeM('mView')"><div class="box" id="viewBox"></div></div>
+<footer><div id="foot"></div></footer>
+
 <!-- نافذة التعديل -->
 <div class="modal" id="mEdit" onclick="if(event.target===this)closeM('mEdit')"><div class="box" id="editBox"></div></div>
 <div id="toast"></div>
 
 <script>window.ADMIN=true</script>
+<script src="config.js"></script>
 <script src="script.js"></script>
 </body>
 </html>
