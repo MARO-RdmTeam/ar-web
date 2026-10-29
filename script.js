@@ -99,8 +99,21 @@ const I = {
   go: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>',
   share: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.6l6.8-4.2M8.6 13.4l6.8 4.2"/></svg>',
   search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>',
-  platform: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>'
+  platform: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>',
+  android: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>',
+  gamepad: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="12" x2="10" y2="12"></line><line x1="8" y1="10" x2="8" y2="14"></line><line x1="15" y1="13" x2="15.01" y2="13"></line><line x1="18" y1="11" x2="18.01" y2="11"></line><rect x="2" y="6" width="20" height="12" rx="6"></rect></svg>'
 };
+
+function getPlatformIcon(p) {
+  const norm = String(p || "").trim().toUpperCase();
+  if (norm.includes("ANDROID") || norm.includes("أندرويد") || norm.includes("اندرويد") || norm.includes("APK") || norm.includes("MOBILE")) {
+    return I.android;
+  }
+  if (norm.includes("PC") || norm.includes("WINDOWS") || norm.includes("حاسوب") || norm.includes("كمبيوتر")) {
+    return I.platform;
+  }
+  return I.gamepad;
+}
 
 /* ===== تحميل البيانات واسترجاعها ===== */
 async function load() {
@@ -391,13 +404,15 @@ function cardHTML(g, i) {
   }
 
   const badgeText = g.status || catName;
+  const platform = (g.platform || "PC").trim();
+  const platIcon = getPlatformIcon(platform);
 
   return `<article class="card" style="--i:${i % 8}">
     <a class="stretch" href="${gameHref(g.id)}" aria-label="${esc(g.title)}"></a>
     <span class="card-badge ${catClass}">${esc(badgeText)}</span>
     <div class="cover">
       ${cover ? `<img src="${esc(cover)}" alt="${esc(g.title)}" loading="lazy" decoding="async">` : `<div class="ph">🎮</div>`}
-      <span class="card-platform-chip">${I.platform} <span>PC</span></span>
+      <span class="card-platform-chip">${platIcon} <span>${esc(platform)}</span></span>
       <i class="shine"></i>
     </div>
     <div class="card-body">
@@ -443,7 +458,7 @@ function renderHome() {
 
   // فلترة حسب البحث
   if (q) {
-    list = list.filter(g => (g.title + " " + (g.desc || "") + " " + (g.status || "")).toLowerCase().includes(q));
+    list = list.filter(g => (g.title + " " + (g.desc || "") + " " + (g.status || "") + " " + (g.platform || "")).toLowerCase().includes(q));
   }
 
   // تحديث البانر البارز (Hero Spotlight Banner)
@@ -539,6 +554,7 @@ function renderTopGames() {
     const cover = safeUrl(g.cover);
     const cat = getGameCategory(g);
     const catLabel = cat === "ready" ? "تعريب جاهز" : (cat === "wip" ? "قيد العمل" : "لعبة كاملة");
+    const platform = (g.platform || "PC").trim();
     return `<a href="${gameHref(g.id)}" class="top-game-item">
       <span class="top-rank">${idx + 1}</span>
       <div class="top-thumb">
@@ -546,7 +562,7 @@ function renderTopGames() {
       </div>
       <div class="top-info">
         <div class="top-title">${esc(g.title)}</div>
-        <div class="top-sub">${esc(g.status || catLabel)} • PC</div>
+        <div class="top-sub">${esc(g.status || catLabel)} • ${esc(platform)}</div>
       </div>
     </a>`;
   }).join("");
@@ -589,6 +605,17 @@ function renderGame(id) {
   curShots = shots;
   const links = (g.links || []).filter(l => safeUrl(l.url));
   const date = g.created ? new Date(g.created).toLocaleDateString("ar-EG", { year: "numeric", month: "long", day: "numeric" }) : "";
+  const platform = (g.platform || "PC").trim();
+  const pUp = platform.toUpperCase();
+  let platLabel = `متوفر لمنصة ${esc(platform)}`;
+  if (pUp === "PC") {
+    platLabel = "متوفر لمنصة الحاسوب (PC)";
+  } else if (pUp === "ANDROID") {
+    platLabel = "متوفر لمنصة أندرويد (Android)";
+  }
+  const metaParts = [];
+  if (date) metaParts.push(`أُضيف التعريب في ${esc(date)}`);
+  metaParts.push(platLabel);
   const others = state.games.filter(x => x.id !== g.id).slice(0, 4);
 
   el.innerHTML = `
@@ -610,7 +637,7 @@ function renderGame(id) {
       <div class="gv-info">
         ${g.status ? `<span class="chip">${esc(g.status)}</span>` : ""}
         <h1>${esc(g.title)}</h1>
-        ${date ? `<div class="gv-meta">أُضيف التعريب في ${esc(date)} • متوفر لمنصة الحاسوب (PC)</div>` : ""}
+        <div class="gv-meta">${metaParts.join(" • ")}</div>
         ${links.length ? `<button class="cta" data-scroll="dl">${I.dl}<span>تحميل ملفات التعريب</span></button>` : ""}
       </div>
     </div>
@@ -803,6 +830,27 @@ function thumbs() {
   }
 }
 
+function setPlatformChoice(choice) {
+  const hidden = $("fPlatformChoice");
+  if (hidden) hidden.value = choice;
+
+  document.querySelectorAll(".plat-choice-btn").forEach(btn => {
+    const isSelected = btn.getAttribute("data-plat") === choice;
+    btn.classList.toggle("o", !isSelected);
+  });
+
+  const customWrap = $("platCustomWrap");
+  const customInput = $("fPlatformCustom");
+  if (customWrap) {
+    if (choice === "CUSTOM") {
+      customWrap.style.display = "block";
+      if (customInput) customInput.focus();
+    } else {
+      customWrap.style.display = "none";
+    }
+  }
+}
+
 function editGame(id) {
   const g = state.games.find(x => x.id === id) || {};
   editing = g.id || null;
@@ -812,6 +860,16 @@ function editGame(id) {
   if (!editBox) return;
 
   const cat = getGameCategory(g);
+  const currentPlat = (g.platform || "PC").trim();
+  const up = currentPlat.toUpperCase();
+  let platPreset = "PC";
+  if (up === "ANDROID") {
+    platPreset = "ANDROID";
+  } else if (up === "PC" || !g.platform) {
+    platPreset = "PC";
+  } else {
+    platPreset = "CUSTOM";
+  }
 
   editBox.innerHTML = `
     <button class="x" onclick="closeM('mEdit')">×</button>
@@ -826,6 +884,17 @@ function editGame(id) {
       <option value="ready" ${cat === "ready" ? "selected" : ""}>🛡️ تعريبات جاهزة (باتشات وتحديثات)</option>
       <option value="wip" ${cat === "wip" ? "selected" : ""}>⏳ قيد العمل (مشاريع مستمرة)</option>
     </select>
+
+    <label>منصة اللعبة (Platform)</label>
+    <div class="plat-select-group">
+      <button type="button" class="btn plat-choice-btn ${platPreset === 'PC' ? '' : 'o'}" data-plat="PC" onclick="setPlatformChoice('PC')">🖥️ PC</button>
+      <button type="button" class="btn plat-choice-btn ${platPreset === 'ANDROID' ? '' : 'o'}" data-plat="ANDROID" onclick="setPlatformChoice('ANDROID')">📱 ANDROID</button>
+      <button type="button" class="btn plat-choice-btn ${platPreset === 'CUSTOM' ? '' : 'o'}" data-plat="CUSTOM" onclick="setPlatformChoice('CUSTOM')">✍️ أكتب بنفسي</button>
+    </div>
+    <input type="hidden" id="fPlatformChoice" value="${platPreset}">
+    <div id="platCustomWrap" style="margin-top:8px;${platPreset === 'CUSTOM' ? '' : 'display:none;'}">
+      <input id="fPlatformCustom" placeholder="اكتب اسم المنصة هنا (مثال: PlayStation 5، iOS، Switch...)" value="${esc(platPreset === 'CUSTOM' ? currentPlat : '')}">
+    </div>
 
     <label>الحالة / الإصدار <small>(مثال: مكتملة، قيد العمل، تحديث v1.2)</small></label>
     <input id="fStatus" value="${esc(g.status || (cat === 'ready' ? 'تعريب جاهز' : cat === 'wip' ? 'قيد العمل' : 'مكتملة'))}">
@@ -871,6 +940,18 @@ function submitGame() {
 
   const category = $("fCategory") ? $("fCategory").value : "full";
 
+  const platChoice = $("fPlatformChoice") ? $("fPlatformChoice").value : "PC";
+  let platform = "PC";
+  if (platChoice === "ANDROID") {
+    platform = "ANDROID";
+  } else if (platChoice === "CUSTOM") {
+    const customVal = $("fPlatformCustom") ? $("fPlatformCustom").value.trim() : "";
+    if (!customVal) return toast("يرجى كتابة اسم المنصة المخصصة");
+    platform = customVal;
+  } else {
+    platform = "PC";
+  }
+
   const links = $("fLinks").value.split("\n")
     .map(l => l.trim())
     .filter(Boolean)
@@ -886,6 +967,7 @@ function submitGame() {
     id: editing || ("g" + Date.now()),
     title,
     category,
+    platform,
     status: $("fStatus").value.trim(),
     cover: tmp.cover,
     shots: tmp.shots,
