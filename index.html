@@ -3,35 +3,290 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>عمار للتعريب</title>
+<title>عمار للتعريب — بوابة تعريب الألعاب</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Aref+Ruqaa:wght@700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Aref+Ruqaa:wght@700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
+<!-- شريط التنقل العلوي الحديث -->
+<header class="top-nav">
+  <div class="nav-wrap">
+    <div class="nav-brand">
+      <a href="#/" class="brand-link" id="navLogo">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="6 3 18 3 21 8 12 22 3 8 6 3"></polygon>
+            <circle cx="12" cy="11" r="2"></circle>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-title" id="navTitle">عمار للتعريب</span>
+          <span class="brand-sub" id="navSub">نحو محتوى أوسع .. بلغتك</span>
+        </div>
+      </a>
+    </div>
+
+    <!-- روابط التنقل السريعة -->
+    <nav class="nav-links">
+      <a href="#/" class="nav-item active" id="navHomeBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+        <span>الرئيسية</span>
+      </a>
+      <a href="#/" onclick="scrollToSection('gamesSection'); return false;" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+        <span>الألعاب المعربة</span>
+      </a>
+      <a href="javascript:void(0)" onclick="openGuideModal()" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+        <span>طريقة التثبيت</span>
+      </a>
+      <a href="javascript:void(0)" id="navTgLink" class="nav-item" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+        <span>قناة تيليجرام</span>
+      </a>
+    </nav>
+
+    <!-- شريط البحث والإجراءات -->
+    <div class="nav-actions">
+      <div class="nav-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input type="text" id="q" placeholder="ابحث عن لعبة أو تعريب…" oninput="renderHome()" autocomplete="off">
+        <button id="clearSearch" class="clear-search" onclick="clearSearchInput()" style="display:none" aria-label="مسح البحث">×</button>
+      </div>
+      <a href="admin.html" class="admin-pill" title="لوحة التحكم">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        <span>الإدارة</span>
+      </a>
+    </div>
+  </div>
+</header>
+
 <!-- الصفحة الرئيسية -->
 <main id="home" class="view">
   <div class="wrap">
-    <header>
-      <div id="logoBox"></div>
-      <div class="rule"><span>✦</span></div>
-      <div class="tag" id="tagline"></div>
-      <a class="tg" id="tgLink" target="_blank" rel="noopener" style="display:none">تابعنا على تيليجرام</a>
-    </header>
-    <div class="search">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
-      <input id="q" placeholder="ابحث عن لعبة…" oninput="render()">
+    
+    <!-- قسم البانر البارز (Hero Spotlight Banner) -->
+    <section class="hero-spotlight" id="heroSpotlight">
+      <div class="hero-card">
+        <div class="hero-bg" id="heroBg"></div>
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+          <div class="hero-badge">
+            <span class="badge-dot"></span>
+            <span id="heroBadgeText">تعريب مميز</span>
+          </div>
+          <h1 class="hero-title" id="heroTitle">عمار للتعريب</h1>
+          <p class="hero-desc" id="heroDesc">نحو محتوى أوسع وأشمل.. نقدم لكم ترجمات وتعريبات احترافية بجودة عالية لأفضل الألعاب لتستمتعوا بتجربة كاملة باللغة العربية.</p>
+          <div class="hero-actions">
+            <a href="javascript:void(0)" class="btn hero-btn-primary" id="heroCta">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+              <span>استكشف التعريب</span>
+            </a>
+            <a href="javascript:void(0)" onclick="openGuideModal()" class="btn hero-btn-secondary">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+              <span>دليل التثبيت السريع</span>
+            </a>
+          </div>
+        </div>
+        <div class="hero-slider-nav" id="heroNav"></div>
+      </div>
+    </section>
+
+    <!-- الشبكة الرئيسية: المحتوى + شريط الأقسام والنشاطات الجانبي -->
+    <div class="portal-layout" id="gamesSection">
+      
+      <!-- العمود الأساسي: الألعاب المعربة والفلترة -->
+      <section class="portal-main">
+        <div class="section-bar">
+          <div class="section-heading">
+            <div class="heading-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+            </div>
+            <div>
+              <h2 class="section-title">أحدث الألعاب والتعريبات</h2>
+              <span class="count-badge" id="count">0 لعبة</span>
+            </div>
+          </div>
+
+          <!-- فلاتر التصنيف السريعة -->
+          <div class="filter-tabs" id="filterTabs">
+            <button class="filter-btn active" data-filter="all">الكل</button>
+            <button class="filter-btn" data-filter="completed">مكتملة</button>
+            <button class="filter-btn" data-filter="wip">قيد العمل</button>
+          </div>
+        </div>
+
+        <!-- شبكة كروت الألعاب -->
+        <div class="grid" id="grid"></div>
+      </section>
+
+      <!-- العمود الجانبي المساعد (مستوحى من التصميم بدون قائمة البروفايل) -->
+      <aside class="portal-sidebar">
+        
+        <!-- ويدجت: أشهر وأحدث التعريبات -->
+        <div class="sidebar-widget top-games-widget">
+          <div class="widget-header">
+            <div class="widget-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path></svg>
+              <span>أبرز التعريبات</span>
+            </div>
+          </div>
+          <div class="top-games-list" id="topGamesList"></div>
+        </div>
+
+        <!-- ويدجت: أقسام وتصنيفات الموقع -->
+        <div class="sidebar-widget categories-widget">
+          <div class="widget-header">
+            <div class="widget-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+              <span>أقسام التعريب</span>
+            </div>
+          </div>
+          <div class="categories-grid">
+            <a href="javascript:void(0)" onclick="setFilter('all')" class="cat-card">
+              <span class="cat-icon">🎮</span>
+              <span class="cat-name">ألعاب كاملة</span>
+              <span class="cat-meta" id="catFullCount">جميع التعريبات</span>
+            </a>
+            <a href="javascript:void(0)" onclick="setFilter('completed')" class="cat-card">
+              <span class="cat-icon">🛡️</span>
+              <span class="cat-name">تعريبات جاهزة</span>
+              <span class="cat-meta">تحميل فوري</span>
+            </a>
+            <a href="javascript:void(0)" onclick="setFilter('wip')" class="cat-card">
+              <span class="cat-icon">⏳</span>
+              <span class="cat-name">قيد العمل</span>
+              <span class="cat-meta">مشاريع مستمرة</span>
+            </a>
+            <a href="javascript:void(0)" onclick="openGuideModal()" class="cat-card">
+              <span class="cat-icon">📖</span>
+              <span class="cat-name">الشروحات</span>
+              <span class="cat-meta">دليل التثبيت</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- ويدجت: مجتمع تيليجرام والتواصل -->
+        <div class="sidebar-widget community-widget" id="sideCommunity">
+          <div class="community-card">
+            <div class="comm-icon-box">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+            </div>
+            <h3>انضم إلى مجتمعنا</h3>
+            <p>تابع جديد التحديثات، واقترح ألعابك المفضلة لنقوم بتعريبها معاً في قادم المشاريع.</p>
+            <a href="javascript:void(0)" id="sideTgBtn" target="_blank" rel="noopener" class="btn side-tg-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+              <span>قناة تيليجرام</span>
+            </a>
+          </div>
+        </div>
+
+      </aside>
     </div>
-    <div class="count" id="count"></div>
-    <div class="grid" id="grid"></div>
+
+    <!-- قسم المقالات والتعليمات السريعة في الأسفل -->
+    <section class="guides-section">
+      <div class="section-heading" style="margin-bottom: 20px;">
+        <div class="heading-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+        </div>
+        <div>
+          <h2 class="section-title">إرشادات وأسئلة شائعة</h2>
+          <span class="section-subtitle">كل ما تحتاجه لتثبيت وتشغيل التعريبات بسلاسة</span>
+        </div>
+      </div>
+
+      <div class="guides-grid">
+        <div class="guide-card" onclick="openGuideModal()">
+          <div class="guide-badge">دليل فوري</div>
+          <h3>كيف أقوم بتثبيت أي ملف تعريب؟</h3>
+          <p>شرح مبسط خطوة بخطوة لطريقة نقل ملفات الترجمة والباتشات إلى مسار اللعبة الأصلي.</p>
+          <span class="guide-link">قراءة الشرح الكامل ←</span>
+        </div>
+        <div class="guide-card" onclick="openGuideModal()">
+          <div class="guide-badge">حلول تقنية</div>
+          <h3>مشكلة ظهور حروف الترجمة متقطعة أو معكوسة</h3>
+          <p>طريقة ضبط ترميز النظام وتثبيت الخطوط العربية المرفقة مع الباتش لتظهر النصوص بشكل سليم.</p>
+          <span class="guide-link">عرض الحلول المقترحة ←</span>
+        </div>
+        <div class="guide-card" onclick="openGuideModal()">
+          <div class="guide-badge">نصيحة هامة</div>
+          <h3>أخذ نسخة احتياطية (Backup) قبل التثبيت</h3>
+          <p>خطوة بسيطة تحفظ لك ملفات اللعبة الأصلية في حال رغبت بالرجوع للغة الإنجليزية مستقبلاً.</p>
+          <span class="guide-link">تفاصيل أكثر ←</span>
+        </div>
+      </div>
+    </section>
+
   </div>
 </main>
 
-<!-- صفحة اللعبة (بتتملى تلقائي) -->
+<!-- صفحة تفاصيل اللعبة (تتولد تلقائياً بدون فقدان أي بيانات) -->
 <main id="game" class="view" hidden></main>
 
-<footer><div id="foot"></div></footer>
+<!-- نافذة دليل التثبيت التفاعلية (Modal) -->
+<div class="modal" id="mGuide" onclick="if(event.target===this)closeM('mGuide')">
+  <div class="box guide-box">
+    <button class="x" onclick="closeM('mGuide')">×</button>
+    <h2>📖 دليل تثبيت التعريب</h2>
+    <p style="color:var(--mut);margin-bottom:18px;">خطوات بسيطة تضمن عمل أي تعريب بالشكل الصحيح:</p>
+    
+    <div class="steps-list">
+      <div class="step-item">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h4>تحميل ملف التعريب</h4>
+          <p>قم بتحميل الملف المرفق في صفحة اللعبة من خلال زر التحميل المباشر.</p>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h4>فك الضغط ونسخ الملفات</h4>
+          <p>باستخدام برنامج WinRAR أو 7-Zip، قم بفك الضغط عن الملف وانسخ المحتويات إلى مجلد اللعبة الرئيسي (المسار الذي يحتوي على ملف تشغيل .exe).</p>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h4>الموافقة على الاستبدال والتشغيل</h4>
+          <p>وافق على استبدال الملفات إذا طُلب منك ذلك، ثم ابدأ اللعبة واستمتع بتجربة اللغة العربية!</p>
+        </div>
+      </div>
+    </div>
+    
+    <button class="btn" style="width:100%;margin-top:20px;" onclick="closeM('mGuide')">فهمت، حسناً</button>
+  </div>
+</div>
+
+<!-- تذييل الصفحة الحديث -->
+<footer>
+  <div class="wrap footer-wrap">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <div class="brand-text">
+          <span class="footer-title" id="footTitle">عمار للتعريب</span>
+          <span class="footer-desc" id="footTagline">نحو محتوى أوسع .. بلغتك</span>
+        </div>
+      </div>
+      <div class="footer-links">
+        <a href="#/">الرئيسية</a>
+        <a href="#/" onclick="scrollToSection('gamesSection'); return false;">الألعاب</a>
+        <a href="javascript:void(0)" onclick="openGuideModal()">طريقة التثبيت</a>
+        <a href="javascript:void(0)" id="footTgLink" target="_blank" rel="noopener">تيليجرام</a>
+        <a href="admin.html">لوحة الإدارة</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div id="foot">جميع الحقوق محفوظة © عمار للتعريب</div>
+      <div class="footer-credit">صُمم بحب لمجتمع اللاعبين العرب ✨</div>
+    </div>
+  </div>
+</footer>
+
 <div id="toast"></div>
 
 <script src="script.js"></script>
