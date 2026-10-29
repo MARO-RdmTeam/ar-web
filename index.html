@@ -114,7 +114,8 @@
           <!-- فلاتر التصنيف السريعة -->
           <div class="filter-tabs" id="filterTabs">
             <button class="filter-btn active" data-filter="all">الكل</button>
-            <button class="filter-btn" data-filter="completed">مكتملة</button>
+            <button class="filter-btn" data-filter="full">ألعاب كاملة</button>
+            <button class="filter-btn" data-filter="ready">تعريبات جاهزة</button>
             <button class="filter-btn" data-filter="wip">قيد العمل</button>
           </div>
         </div>
@@ -146,26 +147,26 @@
             </div>
           </div>
           <div class="categories-grid">
-            <a href="javascript:void(0)" onclick="setFilter('all')" class="cat-card">
+            <div onclick="setFilter('full')" class="cat-card">
               <span class="cat-icon">🎮</span>
               <span class="cat-name">ألعاب كاملة</span>
-              <span class="cat-meta" id="catFullCount">جميع التعريبات</span>
-            </a>
-            <a href="javascript:void(0)" onclick="setFilter('completed')" class="cat-card">
+              <span class="cat-meta" id="catFullCount">0 ألعاب مضافة</span>
+            </div>
+            <div onclick="setFilter('ready')" class="cat-card">
               <span class="cat-icon">🛡️</span>
               <span class="cat-name">تعريبات جاهزة</span>
-              <span class="cat-meta">تحميل فوري</span>
-            </a>
-            <a href="javascript:void(0)" onclick="setFilter('wip')" class="cat-card">
+              <span class="cat-meta" id="catReadyCount">0 تعريبات جاهزة</span>
+            </div>
+            <div onclick="setFilter('wip')" class="cat-card">
               <span class="cat-icon">⏳</span>
               <span class="cat-name">قيد العمل</span>
-              <span class="cat-meta">مشاريع مستمرة</span>
-            </a>
-            <a href="javascript:void(0)" onclick="openGuideModal()" class="cat-card">
+              <span class="cat-meta" id="catWipCount">0 مشاريع مستمرة</span>
+            </div>
+            <div onclick="openGuideModal()" class="cat-card">
               <span class="cat-icon">📖</span>
               <span class="cat-name">الشروحات</span>
               <span class="cat-meta">دليل التثبيت</span>
-            </a>
+            </div>
           </div>
         </div>
 

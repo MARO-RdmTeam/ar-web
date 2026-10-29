@@ -83,17 +83,26 @@ const ls = {
   }
 };
 
+/* ===== فئة تصنيف اللعبة (Category Helper) ===== */
+function getGameCategory(g) {
+  if (g.category) return g.category;
+  const s = (g.status || "").toLowerCase();
+  if (s.includes("عمل") || s.includes("قيد")) return "wip";
+  if (s.includes("جاهز") || s.includes("تحديث") || s.includes("باتش")) return "ready";
+  return "full";
+}
+
 /* ===== الأيقونات ===== */
 const I = {
   back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>',
   dl: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11m0 0l-4.5-4.5M12 15l4.5-4.5M5 19h14"/></svg>',
   go: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>',
   share: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.6l6.8-4.2M8.6 13.4l6.8 4.2"/></svg>',
-  search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>',
+  search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>',
   platform: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>'
 };
 
-/* ===== تحميل البيانات واسترجاعها بدون أي فقدان ===== */
+/* ===== تحميل البيانات واسترجاعها ===== */
 async function load() {
   let pub = null;
   try {
@@ -110,17 +119,21 @@ async function load() {
     };
   }
 
-  // إذا كنا في وضع الإدارة ولديه مسودة محفوظة محلياً
+  loaded = true;
+  initFilterTabs();
+
+  // التحقق من صلاحيات لوحة الإدارة
   if (window.ADMIN) {
     let ok = false;
     try { ok = sessionStorage.getItem("ammar_ok") === "1"; } catch (e) { }
-    if (ok) enableAdmin();
-    else showLock();
+    if (ok) {
+      enableAdmin();
+    } else {
+      setupLockScreen();
+    }
+  } else {
+    render();
   }
-
-  loaded = true;
-  initFilterTabs();
-  render();
 }
 
 function persist() {
@@ -128,7 +141,7 @@ function persist() {
   render();
 }
 
-/* ===== فلاتر التصنيف ===== */
+/* ===== فلاتر التصنيف (أقسام التعريب) ===== */
 function initFilterTabs() {
   const tabs = $("filterTabs");
   if (!tabs) return;
@@ -147,10 +160,20 @@ function setFilter(filter) {
       btn.classList.toggle("active", btn.dataset.filter === filter);
     });
   }
+
+  document.querySelectorAll(".cat-card").forEach(c => {
+    const fn = c.getAttribute("onclick") || "";
+    c.classList.toggle("active", fn.includes(`'${filter}'`));
+  });
+
   renderHome();
+
+  if (filter !== "all") {
+    scrollToSection("gamesSection");
+  }
 }
 
-/* ===== التحقق من رمز الإدارة ===== */
+/* ===== التحقق من رمز الإدارة وشاشة القفل المحمية ===== */
 const ADMIN_HASH = window.ADMIN_HASH || "";
 const SALT = "ammar-taareeb-v1";
 
@@ -159,8 +182,57 @@ async function sha(t) {
   return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, "0")).join("");
 }
 
+function setupLockScreen() {
+  const lock = $("adminLockScreen");
+  const app = $("adminApp");
+  if (lock) lock.style.display = "flex";
+  if (app) app.style.display = "none";
+
+  const btn = $("lBtn");
+  const code = $("lCode");
+  const msg = $("lMsg");
+
+  const go = async () => {
+    if (!ADMIN_HASH) {
+      if (msg) msg.textContent = "يرجى تعيين بصمة الرمز السري في ملف config.js.";
+      return;
+    }
+    if (!(window.crypto && crypto.subtle)) {
+      if (msg) msg.textContent = "المتصفح لا يدعم التشفير الآمن. افتح الموقع عبر HTTPS.";
+      return;
+    }
+    const val = (code ? code.value : "").trim();
+    if (!val) {
+      if (msg) msg.textContent = "يرجى إدخال الرمز السري";
+      return;
+    }
+    const h = await sha(val);
+    if (h === ADMIN_HASH) {
+      try { sessionStorage.setItem("ammar_ok", "1"); } catch (e) { }
+      enableAdmin();
+    } else {
+      if (msg) msg.textContent = "الرمز السري غير صحيح";
+      if (code) {
+        code.value = "";
+        code.focus();
+      }
+    }
+  };
+
+  if (btn) btn.onclick = go;
+  if (code) {
+    code.onkeydown = e => { if (e.key === "Enter") go(); };
+    code.focus();
+  }
+}
+
 function enableAdmin() {
+  const lock = $("adminLockScreen");
+  const app = $("adminApp");
+  if (lock) lock.style.display = "none";
+  if (app) app.style.display = "block";
   document.body.classList.add("admin");
+
   const d = ls.get("ammar_draft");
   if (d) {
     try {
@@ -172,40 +244,6 @@ function enableAdmin() {
     } catch (e) { }
   }
   render();
-}
-
-function showLock() {
-  const m = document.createElement("div");
-  m.className = "modal on";
-  m.id = "mLock";
-  m.innerHTML = `<div class="box" style="max-width:380px;margin-top:90px">
-    <h2>لوحة الإدارة</h2>
-    <label>الرمز السري</label>
-    <input id="lCode" type="password" dir="ltr" autocomplete="off">
-    <div id="lMsg" style="color:var(--red);font-size:13px;margin-top:8px;min-height:18px"></div>
-    <button class="btn" style="width:100%;margin-top:10px" id="lBtn">دخول</button>
-    <a href="index.html" style="display:block;text-align:center;margin-top:14px;color:var(--mut);font-size:13px">رجوع للموقع</a>
-  </div>`;
-  document.body.appendChild(m);
-
-  const go = async () => {
-    const msg = $("lMsg");
-    if (!ADMIN_HASH) { msg.textContent = "لسه ما اتحطش رمز. حط البصمة في config.js."; return; }
-    if (!(window.crypto && crypto.subtle)) { msg.textContent = "المتصفح لا يدعم التحقق. افتح الموقع عبر HTTPS."; return; }
-    const h = await sha($("lCode").value);
-    if (h === ADMIN_HASH) {
-      try { sessionStorage.setItem("ammar_ok", "1"); } catch (e) { }
-      m.remove();
-      enableAdmin();
-    } else {
-      msg.textContent = "الرمز غير صحيح";
-      $("lCode").value = "";
-    }
-  };
-
-  $("lBtn").onclick = go;
-  $("lCode").onkeydown = e => { if (e.key === "Enter") go(); };
-  $("lCode").focus();
 }
 
 function logout() {
@@ -289,7 +327,7 @@ function renderChrome() {
   const navTitle = $("navTitle");
   if (navTitle) navTitle.textContent = site;
   const navSub = $("navSub");
-  if (navSub) navSub.textContent = s.tagline || "نحو محتوى أوسع .. بلغتك";
+  if (navSub) navSub.textContent = window.ADMIN ? "لوحة التحكم والإدارة" : (s.tagline || "نحو محتوى أوسع .. بلغتك");
 
   // تحديث روابط تيليجرام
   const tg = safeUrl(s.telegram);
@@ -340,11 +378,23 @@ function renderChrome() {
 function cardHTML(g, i) {
   const cover = safeUrl(g.cover);
   const d = (g.desc || "").replace(/\s+/g, " ").trim().slice(0, 100);
-  const isCompleted = (g.status || "").includes("مكتمل");
+  const cat = getGameCategory(g);
+
+  let catClass = "cat-full";
+  let catName = "ألعاب كاملة";
+  if (cat === "ready") {
+    catClass = "cat-ready";
+    catName = "تعريب جاهز";
+  } else if (cat === "wip") {
+    catClass = "cat-wip";
+    catName = "قيد العمل";
+  }
+
+  const badgeText = g.status || catName;
 
   return `<article class="card" style="--i:${i % 8}">
     <a class="stretch" href="${gameHref(g.id)}" aria-label="${esc(g.title)}"></a>
-    ${g.status ? `<span class="card-badge ${isCompleted ? 'completed' : 'wip'}">${esc(g.status)}</span>` : ""}
+    <span class="card-badge ${catClass}">${esc(badgeText)}</span>
     <div class="cover">
       ${cover ? `<img src="${esc(cover)}" alt="${esc(g.title)}" loading="lazy" decoding="async">` : `<div class="ph">🎮</div>`}
       <span class="card-platform-chip">${I.platform} <span>PC</span></span>
@@ -382,11 +432,13 @@ function renderHome() {
 
   let list = state.games.slice().sort((a, b) => (b.created || 0) - (a.created || 0));
 
-  // فلترة حسب التصنيف
-  if (currentFilter === "completed") {
-    list = list.filter(g => (g.status || "").includes("مكتمل"));
+  // فلترة حسب أقسام التعريب
+  if (currentFilter === "full") {
+    list = list.filter(g => getGameCategory(g) === "full");
+  } else if (currentFilter === "ready") {
+    list = list.filter(g => getGameCategory(g) === "ready");
   } else if (currentFilter === "wip") {
-    list = list.filter(g => (g.status || "").includes("عمل") || (g.status || "").includes("قيد"));
+    list = list.filter(g => getGameCategory(g) === "wip");
   }
 
   // فلترة حسب البحث
@@ -406,8 +458,8 @@ function renderHome() {
       ? list.map(cardHTML).join("")
       : `<div class="empty">
           <div style="font-size:44px;margin-bottom:12px;">🔍</div>
-          <h3>${q ? "لم يتم العثور على أي تعريب يطابق بحثك" : "لا توجد ألعاب مضافة بعد"}</h3>
-          <p style="color:var(--mut);margin-top:6px;">جرب البحث بكلمات مختلفة أو تصفح كل الأقسام.</p>
+          <h3>${q ? "لم يتم العثور على أي تعريب يطابق بحثك" : "لا توجد ألعاب مضافة في هذا القسم بعد"}</h3>
+          <p style="color:var(--mut);margin-top:6px;">جرب اختيار قسم آخر أو البحث بكلمات مختلفة.</p>
         </div>`;
   }
 
@@ -418,11 +470,19 @@ function renderHome() {
       : "لا توجد ألعاب";
   }
 
-  // تحديث عداد الألعاب الكاملة
-  const catCount = $("catFullCount");
-  if (catCount) {
-    catCount.textContent = `${state.games.length} ألعاب مضافة`;
-  }
+  // تحديث إحصائيات كل قسم بدقة في ويدجت أقسام التعريب
+  const countFull = state.games.filter(g => getGameCategory(g) === "full").length;
+  const countReady = state.games.filter(g => getGameCategory(g) === "ready").length;
+  const countWip = state.games.filter(g => getGameCategory(g) === "wip").length;
+
+  const elFull = $("catFullCount");
+  if (elFull) elFull.textContent = `${countFull} ${countFull === 1 ? "لعبة مضافة" : "ألعاب مضافة"}`;
+
+  const elReady = $("catReadyCount");
+  if (elReady) elReady.textContent = `${countReady} ${countReady === 1 ? "تعريب جاهز" : "تعريبات جاهزة"}`;
+
+  const elWip = $("catWipCount");
+  if (elWip) elWip.textContent = `${countWip} ${countWip === 1 ? "مشروع مستمر" : "مشاريع مستمرة"}`;
 }
 
 /* تحديث قسم البانر البارز (Hero Spotlight) */
@@ -441,7 +501,7 @@ function renderHeroSpotlight(featured) {
       cta.href = "#/";
       cta.onclick = () => scrollToSection("gamesSection");
     }
-    if (badgeText) badgeText.textContent = "بوابة التعريب العربي";
+    if (badgeText) badgeText.textContent = window.ADMIN ? "لوحة التحكم" : "بوابة التعريب العربي";
     return;
   }
 
@@ -477,6 +537,8 @@ function renderTopGames() {
 
   listEl.innerHTML = top.map((g, idx) => {
     const cover = safeUrl(g.cover);
+    const cat = getGameCategory(g);
+    const catLabel = cat === "ready" ? "تعريب جاهز" : (cat === "wip" ? "قيد العمل" : "لعبة كاملة");
     return `<a href="${gameHref(g.id)}" class="top-game-item">
       <span class="top-rank">${idx + 1}</span>
       <div class="top-thumb">
@@ -484,7 +546,7 @@ function renderTopGames() {
       </div>
       <div class="top-info">
         <div class="top-title">${esc(g.title)}</div>
-        <div class="top-sub">${esc(g.status || "تعريب كامل")} • PC</div>
+        <div class="top-sub">${esc(g.status || catLabel)} • PC</div>
       </div>
     </a>`;
   }).join("");
@@ -749,24 +811,40 @@ function editGame(id) {
   const editBox = $("editBox");
   if (!editBox) return;
 
+  const cat = getGameCategory(g);
+
   editBox.innerHTML = `
     <button class="x" onclick="closeM('mEdit')">×</button>
     <h2>${id ? "تعديل لعبة" : "إضافة لعبة جديدة"}</h2>
+    
     <label>اسم اللعبة</label>
     <input id="fTitle" value="${esc(g.title)}">
+
+    <label>قسم التعريب</label>
+    <select id="fCategory">
+      <option value="full" ${cat === "full" ? "selected" : ""}>🎮 ألعاب كاملة</option>
+      <option value="ready" ${cat === "ready" ? "selected" : ""}>🛡️ تعريبات جاهزة (باتشات وتحديثات)</option>
+      <option value="wip" ${cat === "wip" ? "selected" : ""}>⏳ قيد العمل (مشاريع مستمرة)</option>
+    </select>
+
     <label>الحالة / الإصدار <small>(مثال: مكتملة، قيد العمل، تحديث v1.2)</small></label>
-    <input id="fStatus" value="${esc(g.status || 'مكتملة')}">
+    <input id="fStatus" value="${esc(g.status || (cat === 'ready' ? 'تعريب جاهز' : cat === 'wip' ? 'قيد العمل' : 'مكتملة'))}">
+
     <label>صورة الغلاف (Poster)</label>
     <input type="file" accept="image/*" onchange="upCover(this)">
     <input placeholder="أو ضع رابط صورة مباشر" dir="ltr" style="margin-top:6px" value="${esc(g.cover && g.cover.startsWith('http') ? g.cover : '')}" onchange="tmp.cover=this.value;thumbs()">
     <div class="thumbs" id="tCover"></div>
+
     <label>لقطات الشاشة (Screenshots)</label>
     <input type="file" accept="image/*" multiple onchange="upShots(this)">
     <div class="thumbs" id="tShots"></div>
+
     <label>الوصف وتفاصيل التعريب</label>
     <textarea id="fDesc" style="min-height:140px">${esc(g.desc)}</textarea>
+
     <label>روابط التحميل <small>(سطر لكل رابط بالشكل: الاسم | الرابط)</small></label>
     <textarea id="fLinks" dir="ltr" placeholder="تحميل التعريب | https://...&#10;ملف الخطوط | https://...">${esc((g.links || []).map(l => l.label + " | " + l.url).join("\n"))}</textarea>
+
     <button class="btn" style="width:100%;margin-top:20px" onclick="submitGame()">حفظ اللعبة</button>`;
 
   thumbs();
@@ -791,6 +869,8 @@ function submitGame() {
   const title = $("fTitle").value.trim();
   if (!title) return toast("يرجى كتابة اسم اللعبة");
 
+  const category = $("fCategory") ? $("fCategory").value : "full";
+
   const links = $("fLinks").value.split("\n")
     .map(l => l.trim())
     .filter(Boolean)
@@ -805,6 +885,7 @@ function submitGame() {
   const g = {
     id: editing || ("g" + Date.now()),
     title,
+    category,
     status: $("fStatus").value.trim(),
     cover: tmp.cover,
     shots: tmp.shots,
@@ -818,7 +899,7 @@ function submitGame() {
 
   persist();
   closeM("mEdit");
-  toast("تم الحفظ بنجاح! لا تنسَ تصدير data.json ورفعه على GitHub");
+  toast("تم حفظ اللعبة بنجاح! لا تنسَ تصدير data.json للنشر");
 }
 
 function delGame(id) {

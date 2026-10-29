@@ -10,190 +10,262 @@
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Aref+Ruqaa:wght@700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
-<body class="admin">
+<body>
 
-<!-- شريط تحكم الإدارة العلوي -->
-<div class="bar" id="bar">
-  <div id="draftNote" style="width:100%;text-align:center;color:var(--gold2);font-size:13px;display:none;padding:2px 0;">⚠ توجد تعديلات غير منشورة محلياً — انقر «تصدير data.json» ثم ارفع الملف لمستودع GitHub</div>
-  <button class="btn s" onclick="editGame()">+ إضافة لعبة جديدة</button>
-  <button class="btn o s" onclick="editSettings()">إعدادات الموقع</button>
-  <button class="btn o s" onclick="exportData()">تصدير data.json للنشر</button>
-  <button class="btn o s" onclick="document.getElementById('imp').click()">استيراد JSON</button>
-  <button class="btn o s" onclick="discardDraft()">تراجع عن التعديلات</button>
-  <button class="btn d s" onclick="logout()">تسجيل الخروج</button>
-  <input type="file" id="imp" accept=".json" hidden onchange="importData(this)">
-</div>
-
-<!-- شريط التنقل العلوي الحديث -->
-<header class="top-nav">
-  <div class="nav-wrap">
-    <div class="nav-brand">
-      <a href="#/" class="brand-link" id="navLogo">
-        <div class="brand-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polygon points="6 3 18 3 21 8 12 22 3 8 6 3"></polygon>
-            <circle cx="12" cy="11" r="2"></circle>
-          </svg>
-        </div>
-        <div class="brand-text">
-          <span class="brand-title" id="navTitle">عمار للتعريب</span>
-          <span class="brand-sub" id="navSub">لوحة التحكم والإدارة</span>
-        </div>
-      </a>
+<!-- شاشة القفل بالرمز السري (تظهر فقط عند عدم تسجيل الدخول وتمنع رؤية أي محتوى) -->
+<div id="adminLockScreen" class="admin-lock-screen">
+  <div class="lock-card">
+    <div class="lock-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+      </svg>
     </div>
-
-    <!-- روابط التنقل السريعة -->
-    <nav class="nav-links">
-      <a href="#/" class="nav-item active" id="navHomeBtn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-        <span>الرئيسية</span>
-      </a>
-      <a href="index.html" class="nav-item">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-        <span>معاينة الموقع للزوار</span>
-      </a>
-    </nav>
-
-    <!-- شريط البحث والإجراءات -->
-    <div class="nav-actions">
-      <div class="nav-search">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-        <input type="text" id="q" placeholder="ابحث عن لعبة…" oninput="renderHome()" autocomplete="off">
-        <button id="clearSearch" class="clear-search" onclick="clearSearchInput()" style="display:none">×</button>
-      </div>
-      <button class="btn s" onclick="editGame()">+ أضف لعبة</button>
+    <h2>لوحة الإدارة</h2>
+    <p>أدخل الرمز السري للوصول إلى لوحة التحكم وإدارة التعريبات</p>
+    <div class="lock-form">
+      <input id="lCode" type="password" dir="ltr" placeholder="••••••••" autocomplete="current-password">
+      <div id="lMsg" class="lock-error"></div>
+      <button class="btn lock-btn" id="lBtn">دخول لوحة التحكم</button>
+      <a href="index.html" class="lock-back">← الرجوع للموقع الرئيسي</a>
     </div>
   </div>
-</header>
+</div>
 
-<!-- الصفحة الرئيسية للإدارة -->
-<main id="home" class="view">
-  <div class="wrap">
-    
-    <!-- قسم البانر البارز (Hero Spotlight Banner) -->
-    <section class="hero-spotlight" id="heroSpotlight">
-      <div class="hero-card">
-        <div class="hero-bg" id="heroBg"></div>
-        <div class="hero-overlay"></div>
-        <div class="hero-content">
-          <div class="hero-badge">
-            <span class="badge-dot"></span>
-            <span id="heroBadgeText">تعريب مميز</span>
+<!-- المحتوى الكامل للوحة الإدارة (مخفي تماماً حتى إدخال الرمز السري بنجاح) -->
+<div id="adminApp" style="display:none">
+
+  <!-- شريط تحكم الإدارة العلوي -->
+  <div class="bar" id="bar">
+    <div id="draftNote" style="width:100%;text-align:center;color:var(--gold2);font-size:13px;display:none;padding:2px 0;">⚠ توجد تعديلات غير منشورة محلياً — انقر «تصدير data.json» ثم ارفع الملف لمستودع GitHub</div>
+    <button class="btn s" onclick="editGame()">+ إضافة لعبة جديدة</button>
+    <button class="btn o s" onclick="editSettings()">إعدادات الموقع</button>
+    <button class="btn o s" onclick="exportData()">تصدير data.json للنشر</button>
+    <button class="btn o s" onclick="document.getElementById('imp').click()">استيراد JSON</button>
+    <button class="btn o s" onclick="discardDraft()">تراجع عن التعديلات</button>
+    <button class="btn d s" onclick="logout()">تسجيل الخروج</button>
+    <input type="file" id="imp" accept=".json" hidden onchange="importData(this)">
+  </div>
+
+  <!-- شريط التنقل العلوي الحديث -->
+  <header class="top-nav">
+    <div class="nav-wrap">
+      <div class="nav-brand">
+        <a href="#/" class="brand-link" id="navLogo">
+          <div class="brand-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="6 3 18 3 21 8 12 22 3 8 6 3"></polygon>
+              <circle cx="12" cy="11" r="2"></circle>
+            </svg>
           </div>
-          <h1 class="hero-title" id="heroTitle">عمار للتعريب</h1>
-          <p class="hero-desc" id="heroDesc">نحو محتوى أوسع وأشمل.. تفضل بإدارة وإضافة الألعاب من خلال أدوات التحكم السريعة بالأعلى.</p>
-          <div class="hero-actions">
-            <button class="btn hero-btn-primary" onclick="editGame()">
-              <span>+ إضافة لعبة جديدة</span>
-            </button>
-            <button class="btn hero-btn-secondary" onclick="editSettings()">
-              <span>تعديل إعدادات الموقع</span>
-            </button>
+          <div class="brand-text">
+            <span class="brand-title" id="navTitle">عمار للتعريب</span>
+            <span class="brand-sub" id="navSub">لوحة التحكم والإدارة</span>
           </div>
-        </div>
+        </a>
       </div>
-    </section>
 
-    <!-- الشبكة الرئيسية: المحتوى + شريط الأقسام والنشاطات الجانبي -->
-    <div class="portal-layout" id="gamesSection">
+      <!-- روابط التنقل السريعة -->
+      <nav class="nav-links">
+        <a href="#/" class="nav-item active" id="navHomeBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+          <span>الرئيسية</span>
+        </a>
+        <a href="index.html" class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+          <span>معاينة الموقع للزوار</span>
+        </a>
+      </nav>
+
+      <!-- شريط البحث والإجراءات -->
+      <div class="nav-actions">
+        <div class="nav-search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <input type="text" id="q" placeholder="ابحث عن لعبة…" oninput="renderHome()" autocomplete="off">
+          <button id="clearSearch" class="clear-search" onclick="clearSearchInput()" style="display:none">×</button>
+        </div>
+        <button class="btn s" onclick="editGame()">+ أضف لعبة</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- الصفحة الرئيسية للإدارة -->
+  <main id="home" class="view">
+    <div class="wrap">
       
-      <!-- العمود الأساسي: الألعاب المعربة والفلترة -->
-      <section class="portal-main">
-        <div class="section-bar">
-          <div class="section-heading">
-            <div class="heading-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+      <!-- قسم البانر البارز (Hero Spotlight Banner) -->
+      <section class="hero-spotlight" id="heroSpotlight">
+        <div class="hero-card">
+          <div class="hero-bg" id="heroBg"></div>
+          <div class="hero-overlay"></div>
+          <div class="hero-content">
+            <div class="hero-badge">
+              <span class="badge-dot"></span>
+              <span id="heroBadgeText">لوحة التحكم</span>
             </div>
-            <div>
-              <h2 class="section-title">الألعاب المضافة (إدارة وتعديل)</h2>
-              <span class="count-badge" id="count">0 لعبة</span>
+            <h1 class="hero-title" id="heroTitle">عمار للتعريب</h1>
+            <p class="hero-desc" id="heroDesc">يمكنك إضافة ألعاب جديدة، تحديد قسم كل لعبة بدقة، وتعديل الروابط وملفات التحميل من خلال الأزرار أدناه.</p>
+            <div class="hero-actions">
+              <button class="btn hero-btn-primary" onclick="editGame()">
+                <span>+ إضافة لعبة جديدة</span>
+              </button>
+              <button class="btn hero-btn-secondary" onclick="editSettings()">
+                <span>تعديل إعدادات الموقع</span>
+              </button>
             </div>
-          </div>
-
-          <!-- فلاتر التصنيف -->
-          <div class="filter-tabs" id="filterTabs">
-            <button class="filter-btn active" data-filter="all">الكل</button>
-            <button class="filter-btn" data-filter="completed">مكتملة</button>
-            <button class="filter-btn" data-filter="wip">قيد العمل</button>
           </div>
         </div>
-
-        <!-- شبكة كروت الألعاب -->
-        <div class="grid" id="grid"></div>
       </section>
 
-      <!-- العمود الجانبي -->
-      <aside class="portal-sidebar">
+      <!-- الشبكة الرئيسية: المحتوى + شريط الأقسام الجانبي -->
+      <div class="portal-layout" id="gamesSection">
         
-        <!-- ويدجت: أشهر وأحدث التعريبات -->
-        <div class="sidebar-widget top-games-widget">
-          <div class="widget-header">
-            <div class="widget-title">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path></svg>
-              <span>أبرز الألعاب في الموقع</span>
+        <!-- العمود الأساسي: الألعاب المعربة والفلترة -->
+        <section class="portal-main">
+          <div class="section-bar">
+            <div class="section-heading">
+              <div class="heading-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+              </div>
+              <div>
+                <h2 class="section-title">الألعاب المضافة (إدارة وتعديل)</h2>
+                <span class="count-badge" id="count">0 لعبة</span>
+              </div>
             </div>
-          </div>
-          <div class="top-games-list" id="topGamesList"></div>
-        </div>
 
-        <!-- ويدجت: إحصائيات سريعة وأقسام -->
-        <div class="sidebar-widget categories-widget">
-          <div class="widget-header">
-            <div class="widget-title">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-              <span>إحصائيات الموقع</span>
+            <!-- فلاتر التصنيف حسب الأقسام -->
+            <div class="filter-tabs" id="filterTabs">
+              <button class="filter-btn active" data-filter="all">الكل</button>
+              <button class="filter-btn" data-filter="full">ألعاب كاملة</button>
+              <button class="filter-btn" data-filter="ready">تعريبات جاهزة</button>
+              <button class="filter-btn" data-filter="wip">قيد العمل</button>
             </div>
           </div>
-          <div class="categories-grid">
-            <div class="cat-card">
-              <span class="cat-icon">🎮</span>
-              <span class="cat-name">إجمالي الألعاب</span>
-              <span class="cat-meta" id="catFullCount">0 ألعاب</span>
-            </div>
-            <div class="cat-card" onclick="editSettings()" style="cursor:pointer">
-              <span class="cat-icon">⚙️</span>
-              <span class="cat-name">الإعدادات</span>
-              <span class="cat-meta">تعديل فوري</span>
-            </div>
-          </div>
-        </div>
 
-      </aside>
+          <!-- شبكة كروت الألعاب مع أزرار التعديل والحذف -->
+          <div class="grid" id="grid"></div>
+        </section>
+
+        <!-- العمود الجانبي -->
+        <aside class="portal-sidebar">
+          
+          <!-- ويدجت: أشهر وأحدث التعريبات -->
+          <div class="sidebar-widget top-games-widget">
+            <div class="widget-header">
+              <div class="widget-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path></svg>
+                <span>أبرز الألعاب في الموقع</span>
+              </div>
+            </div>
+            <div class="top-games-list" id="topGamesList"></div>
+          </div>
+
+          <!-- ويدجت: أقسام التعريب مع إحصائيات دقيقة -->
+          <div class="sidebar-widget categories-widget">
+            <div class="widget-header">
+              <div class="widget-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                <span>أقسام التعريب</span>
+              </div>
+            </div>
+            <div class="categories-grid">
+              <div class="cat-card" onclick="setFilter('full')">
+                <span class="cat-icon">🎮</span>
+                <span class="cat-name">ألعاب كاملة</span>
+                <span class="cat-meta" id="catFullCount">0 ألعاب مضافة</span>
+              </div>
+              <div class="cat-card" onclick="setFilter('ready')">
+                <span class="cat-icon">🛡️</span>
+                <span class="cat-name">تعريبات جاهزة</span>
+                <span class="cat-meta" id="catReadyCount">0 تعريبات جاهزة</span>
+              </div>
+              <div class="cat-card" onclick="setFilter('wip')">
+                <span class="cat-icon">⏳</span>
+                <span class="cat-name">قيد العمل</span>
+                <span class="cat-meta" id="catWipCount">0 مشاريع مستمرة</span>
+              </div>
+              <div class="cat-card" onclick="openGuideModal()">
+                <span class="cat-icon">📖</span>
+                <span class="cat-name">الشروحات</span>
+                <span class="cat-meta">دليل التثبيت</span>
+              </div>
+            </div>
+          </div>
+
+        </aside>
+      </div>
+
     </div>
+  </main>
 
+  <!-- صفحة تفاصيل اللعبة -->
+  <main id="game" class="view" hidden></main>
+
+  <!-- نافذة التعديل والإضافة (Modal) -->
+  <div class="modal" id="mEdit" onclick="if(event.target===this)closeM('mEdit')">
+    <div class="box" id="editBox"></div>
   </div>
-</main>
 
-<!-- صفحة تفاصيل اللعبة -->
-<main id="game" class="view" hidden></main>
+  <!-- نافذة دليل التثبيت -->
+  <div class="modal" id="mGuide" onclick="if(event.target===this)closeM('mGuide')">
+    <div class="box guide-box">
+      <button class="x" onclick="closeM('mGuide')">×</button>
+      <h2>📖 دليل تثبيت التعريب</h2>
+      <p style="color:var(--mut);margin-bottom:18px;">خطوات بسيطة تضمن عمل أي تعريب بالشكل الصحيح:</p>
+      
+      <div class="steps-list">
+        <div class="step-item">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <h4>تحميل ملف التعريب</h4>
+            <p>قم بتحميل الملف المرفق في صفحة اللعبة من خلال زر التحميل المباشر.</p>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <h4>فك الضغط ونسخ الملفات</h4>
+            <p>باستخدام برنامج WinRAR أو 7-Zip، قم بفك الضغط عن الملف وانسخ المحتويات إلى مجلد اللعبة الرئيسي.</p>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <h4>الموافقة على الاستبدال والتشغيل</h4>
+            <p>وافق على استبدال الملفات إذا طُلب منك ذلك، ثم ابدأ اللعبة واستمتع بتجربة اللغة العربية!</p>
+          </div>
+        </div>
+      </div>
+      
+      <button class="btn" style="width:100%;margin-top:20px;" onclick="closeM('mGuide')">إغلاق</button>
+    </div>
+  </div>
 
-<!-- نافذة التعديل والإضافة (Modal) -->
-<div class="modal" id="mEdit" onclick="if(event.target===this)closeM('mEdit')">
-  <div class="box" id="editBox"></div>
+  <!-- تذييل الصفحة -->
+  <footer>
+    <div class="wrap footer-wrap">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <div class="brand-text">
+            <span class="footer-title" id="footTitle">عمار للتعريب</span>
+            <span class="footer-desc" id="footTagline">لوحة إدارة المحتوى</span>
+          </div>
+        </div>
+        <div class="footer-links">
+          <a href="#/">الرئيسية</a>
+          <a href="index.html">معاينة الموقع للزوار</a>
+          <a href="javascript:void(0)" onclick="exportData()">تصدير data.json</a>
+          <a href="javascript:void(0)" onclick="logout()">خروج</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <div id="foot">جميع الحقوق محفوظة © عمار للتعريب</div>
+        <div class="footer-credit">لوحة الإدارة ⚡</div>
+      </div>
+    </div>
+  </footer>
+
 </div>
-
-<!-- تذييل الصفحة -->
-<footer>
-  <div class="wrap footer-wrap">
-    <div class="footer-top">
-      <div class="footer-brand">
-        <div class="brand-text">
-          <span class="footer-title" id="footTitle">عمار للتعريب</span>
-          <span class="footer-desc" id="footTagline">لوحة إدارة المحتوى</span>
-        </div>
-      </div>
-      <div class="footer-links">
-        <a href="#/">الرئيسية</a>
-        <a href="index.html">معاينة الموقع للزوار</a>
-        <a href="javascript:void(0)" onclick="exportData()">تصدير data.json</a>
-      </div>
-    </div>
-    <div class="footer-bottom">
-      <div id="foot">جميع الحقوق محفوظة © عمار للتعريب</div>
-      <div class="footer-credit">لوحة الإدارة ⚡</div>
-    </div>
-  </div>
-</footer>
 
 <div id="toast"></div>
 
