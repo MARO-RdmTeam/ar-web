@@ -12,7 +12,7 @@
 </head>
 <body>
 
-<!-- شاشة القفل بالرمز السري (تظهر فقط عند عدم تسجيل الدخول وتمنع رؤية أي محتوى) -->
+<!-- شاشة القفل وتسجيل الدخول المحمية عبر Firebase (تمنع الدخول بدون حساب إداري موثق) -->
 <div id="adminLockScreen" class="admin-lock-screen">
   <div class="lock-card">
     <div class="lock-icon">
@@ -21,12 +21,18 @@
         <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
       </svg>
     </div>
-    <h2>لوحة الإدارة</h2>
-    <p>أدخل الرمز السري للوصول إلى لوحة التحكم وإدارة التعريبات</p>
+    <h2>لوحة الإدارة السحابية</h2>
+    <p id="lockSubtitle">سجّل دخولك بحساب الإدارة المعتمد للتحكم بالموقع والألعاب</p>
     <div class="lock-form">
-      <input id="lCode" type="password" dir="ltr" placeholder="••••••••" autocomplete="current-password">
+      <div class="lock-field">
+        <input id="lEmail" type="email" dir="ltr" placeholder="البريد الإلكتروني (الإدارة)" autocomplete="username">
+      </div>
+      <div class="lock-field">
+        <input id="lPass" type="password" dir="ltr" placeholder="كلمة المرور" autocomplete="current-password">
+      </div>
       <div id="lMsg" class="lock-error"></div>
       <button class="btn lock-btn" id="lBtn">دخول لوحة التحكم</button>
+      <div id="firebaseNotice" style="margin-top:14px;font-size:12px;color:var(--gold2);line-height:1.6;display:none;"></div>
       <a href="index.html" class="lock-back">← الرجوع للموقع الرئيسي</a>
     </div>
   </div>
@@ -37,14 +43,12 @@
 
   <!-- شريط تحكم الإدارة العلوي -->
   <div class="bar" id="bar">
-    <div id="draftNote" style="width:100%;text-align:center;color:var(--gold2);font-size:13px;display:none;padding:2px 0;">⚠ توجد تعديلات غير منشورة محلياً — انقر «تصدير data.json» ثم ارفع الملف لمستودع GitHub</div>
     <button class="btn s" onclick="editGame()">+ إضافة لعبة جديدة</button>
     <button class="btn o s" onclick="editSettings()">إعدادات الموقع</button>
-    <button class="btn o s" onclick="exportData()">تصدير data.json للنشر</button>
-    <button class="btn o s" onclick="document.getElementById('imp').click()">استيراد JSON</button>
-    <button class="btn o s" onclick="discardDraft()">تراجع عن التعديلات</button>
+    <button class="btn o s" id="btnMigrate" onclick="migrateToFirebase()">ترحيل data.json إلى Firebase</button>
+    <button class="btn o s" onclick="exportData()">نسخة احتياطية JSON</button>
     <button class="btn d s" onclick="logout()">تسجيل الخروج</button>
-    <input type="file" id="imp" accept=".json" hidden onchange="importData(this)">
+    <div id="adminUserBadge" style="margin-right:auto;color:var(--gold2);font-size:13px;display:flex;align-items:center;gap:8px;"></div>
   </div>
 
   <!-- شريط التنقل العلوي الحديث -->
@@ -269,8 +273,12 @@
 
 <div id="toast"></div>
 
-<script>window.ADMIN=true</script>
-<script src="config.js"></script>
+<script>window.ADMIN=true;</script>
+<!-- Firebase SDKs (Compat version for browser without bundler) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
 <script src="script.js"></script>
 </body>
 </html>

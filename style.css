@@ -1932,15 +1932,28 @@ footer {
   margin-bottom: 24px;
 }
 
+.lock-field {
+  margin-bottom: 12px;
+  width: 100%;
+}
+
 .lock-form input {
+  width: 100%;
+  box-sizing: border-box;
   text-align: center;
-  font-size: 18px;
-  letter-spacing: 2px;
-  padding: 12px 16px;
-  margin-bottom: 8px;
+  font-size: 15px;
+  padding: 13px 18px;
   border-radius: 14px;
   background: #0b0b0e;
   border: 1px solid var(--line-gold);
+  color: #fff;
+  transition: all .2s ease;
+}
+
+.lock-form input:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 15px var(--gold-glow);
 }
 
 .lock-error {

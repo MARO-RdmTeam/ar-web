@@ -115,14 +115,45 @@ function getPlatformIcon(p) {
   return I.gamepad;
 }
 
-/* ===== تحميل البيانات واسترجاعها ===== */
+/* ===== تحميل البيانات واسترجاعها (Firebase Firestore مع نسخة احتياطية محلية) ===== */
 async function load() {
   let pub = null;
-  try {
-    const r = await fetch("data.json?" + Date.now());
-    if (r.ok) pub = await r.json();
-  } catch (e) {
-    console.warn("Could not load data.json:", e);
+
+  // 1. محاولة جلب البيانات مباشرة من Firebase Firestore إن تم ضبطه
+  if (window.db && window.isFirebaseConfigured && window.isFirebaseConfigured()) {
+    try {
+      const [settingsSnap, gamesSnap] = await Promise.all([
+        db.collection("settings").doc("site").get(),
+        db.collection("games").orderBy("created", "desc").get()
+      ]);
+
+      const settingsData = settingsSnap.exists ? settingsSnap.data() : null;
+      const gamesList = [];
+      gamesSnap.forEach(doc => {
+        const d = doc.data();
+        if (!d.id) d.id = doc.id;
+        gamesList.push(d);
+      });
+
+      if (settingsData || gamesList.length > 0) {
+        pub = {
+          settings: settingsData || DEFAULT.settings,
+          games: gamesList
+        };
+      }
+    } catch (err) {
+      console.warn("تعذر الجلب من Firestore، سيتم التراجع تلقائياً لملف data.json:", err);
+    }
+  }
+
+  // 2. استخدام ملف data.json كنسخة احتياطية في حال عدم وجود اتصال أو قبل الترحيل
+  if (!pub) {
+    try {
+      const r = await fetch("data.json?" + Date.now());
+      if (r.ok) pub = await r.json();
+    } catch (e) {
+      console.warn("Could not load data.json:", e);
+    }
   }
 
   if (pub) {
@@ -137,13 +168,7 @@ async function load() {
 
   // التحقق من صلاحيات لوحة الإدارة
   if (window.ADMIN) {
-    let ok = false;
-    try { ok = sessionStorage.getItem("ammar_ok") === "1"; } catch (e) { }
-    if (ok) {
-      enableAdmin();
-    } else {
-      setupLockScreen();
-    }
+    initAdminAuth();
   } else {
     render();
   }
@@ -186,88 +211,110 @@ function setFilter(filter) {
   }
 }
 
-/* ===== التحقق من رمز الإدارة وشاشة القفل المحمية ===== */
-const ADMIN_HASH = window.ADMIN_HASH || "";
-const SALT = "ammar-taareeb-v1";
-
-async function sha(t) {
-  const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(SALT + t));
-  return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, "0")).join("");
-}
-
-function setupLockScreen() {
+/* ===== إدارة تسجيل الدخول السحابي عبر Firebase Auth ===== */
+function initAdminAuth() {
   const lock = $("adminLockScreen");
   const app = $("adminApp");
-  if (lock) lock.style.display = "flex";
-  if (app) app.style.display = "none";
-
-  const btn = $("lBtn");
-  const code = $("lCode");
   const msg = $("lMsg");
+  const notice = $("firebaseNotice");
+  const btn = $("lBtn");
+  const emailInput = $("lEmail");
+  const passInput = $("lPass");
 
-  const go = async () => {
-    if (!ADMIN_HASH) {
-      if (msg) msg.textContent = "يرجى تعيين بصمة الرمز السري في ملف config.js.";
-      return;
+  // التحقق من اكتمال ضبط إعدادات Firebase
+  if (!window.isFirebaseConfigured || !window.isFirebaseConfigured() || !window.auth) {
+    if (lock) lock.style.display = "flex";
+    if (app) app.style.display = "none";
+    if (notice) {
+      notice.innerHTML = `⚠️ <b>خطوة الإعداد المطلوبة:</b><br>يرجى فتح ملف <code>firebase-config.js</code> ووضع مفاتيح مشروع Firebase الخاص بك لتفعيل الدخول المحمي وقاعدة البيانات.`;
+      notice.style.display = "block";
     }
-    if (!(window.crypto && crypto.subtle)) {
-      if (msg) msg.textContent = "المتصفح لا يدعم التشفير الآمن. افتح الموقع عبر HTTPS.";
-      return;
-    }
-    const val = (code ? code.value : "").trim();
-    if (!val) {
-      if (msg) msg.textContent = "يرجى إدخال الرمز السري";
-      return;
-    }
-    const h = await sha(val);
-    if (h === ADMIN_HASH) {
-      try { sessionStorage.setItem("ammar_ok", "1"); } catch (e) { }
-      enableAdmin();
+    if (msg) msg.textContent = "يرجى تهيئة firebase-config.js أولاً.";
+    if (btn) btn.disabled = true;
+    return;
+  }
+
+  if (notice) notice.style.display = "none";
+  if (btn) btn.disabled = false;
+
+  // الاستماع لحالة جلسة الدخول المشفرة من خادم Google Firebase
+  window.auth.onAuthStateChanged(user => {
+    if (user) {
+      enableAdmin(user);
     } else {
-      if (msg) msg.textContent = "الرمز السري غير صحيح";
-      if (code) {
-        code.value = "";
-        code.focus();
+      if (lock) lock.style.display = "flex";
+      if (app) app.style.display = "none";
+      document.body.classList.remove("admin");
+      if (emailInput) emailInput.focus();
+    }
+  });
+
+  const doLogin = async () => {
+    const email = (emailInput ? emailInput.value : "").trim();
+    const pass = (passInput ? passInput.value : "").trim();
+
+    if (!email || !pass) {
+      if (msg) msg.textContent = "يرجى إدخال البريد الإلكتروني وكلمة المرور";
+      return;
+    }
+
+    if (msg) msg.textContent = "جاري التحقق من السيرفر...";
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = "جاري التحقق...";
+    }
+
+    try {
+      await window.auth.signInWithEmailAndPassword(email, pass);
+      if (msg) msg.textContent = "";
+      toast("أهلاً بك! تم تسجيل الدخول بنجاح ✨");
+    } catch (err) {
+      console.error("Login error:", err);
+      let errorMsg = "البريد الإلكتروني أو كلمة المرور غير صحيحة";
+      if (err.code === "auth/invalid-email") errorMsg = "صيغة البريد الإلكتروني غير صالحة";
+      else if (err.code === "auth/user-not-found" || err.code === "auth/wrong-password" || err.code === "auth/invalid-credential") errorMsg = "بيانات الدخول غير صحيحة";
+      else if (err.code === "auth/too-many-requests") errorMsg = "تم حظر المحاولات مؤقتاً لتكرار الخطأ. انتظر دقيقة وحاول مجدداً";
+      else if (err.code === "auth/network-request-failed") errorMsg = "تعذر الاتصال بسيرفر Firebase. تحقق من اتصال الإنترنت";
+      if (msg) msg.textContent = errorMsg;
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = "دخول لوحة التحكم";
       }
     }
   };
 
-  if (btn) btn.onclick = go;
-  if (code) {
-    code.onkeydown = e => { if (e.key === "Enter") go(); };
-    code.focus();
-  }
+  if (btn) btn.onclick = doLogin;
+  if (emailInput) emailInput.onkeydown = e => { if (e.key === "Enter") passInput && passInput.focus(); };
+  if (passInput) passInput.onkeydown = e => { if (e.key === "Enter") doLogin(); };
 }
 
-function enableAdmin() {
+function enableAdmin(user) {
   const lock = $("adminLockScreen");
   const app = $("adminApp");
   if (lock) lock.style.display = "none";
   if (app) app.style.display = "block";
   document.body.classList.add("admin");
 
-  const d = ls.get("ammar_draft");
-  if (d) {
-    try {
-      const x = JSON.parse(d);
-      state = {
-        settings: { ...DEFAULT.settings, ...(x.settings || {}) },
-        games: Array.isArray(x.games) ? x.games : []
-      };
-    } catch (e) { }
+  const badge = $("adminUserBadge");
+  if (badge && user) {
+    badge.innerHTML = `
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+      <span>${esc(user.email || "حساب الإدارة")}</span>
+    `;
   }
+
   render();
 }
 
-function logout() {
+async function logout() {
+  if (window.auth) {
+    try {
+      await window.auth.signOut();
+    } catch (e) { }
+  }
   try { sessionStorage.removeItem("ammar_ok"); } catch (e) { }
   location.href = "index.html";
-}
-
-function discardDraft() {
-  if (!confirm("هتتمسح التعديلات اللي لسه ما اتنشرتش وترجع للنسخة المنشورة. متأكد؟")) return;
-  ls.del("ammar_draft");
-  location.reload();
 }
 
 /* ===== التوجيه (#/game/ID) ===== */
@@ -934,7 +981,7 @@ async function upShots(i) {
   thumbs();
 }
 
-function submitGame() {
+async function submitGame() {
   const title = $("fTitle").value.trim();
   if (!title) return toast("يرجى كتابة اسم اللعبة");
 
@@ -976,20 +1023,46 @@ function submitGame() {
     created: old ? old.created : Date.now()
   };
 
+  // حفظ سحابي مباشر وآمن في Firebase Firestore إن كان مهيأ
+  if (window.db && window.isFirebaseConfigured && window.isFirebaseConfigured()) {
+    try {
+      toast("جاري حفظ اللعبة في قاعدة البيانات...");
+      await db.collection("games").doc(g.id).set(g);
+    } catch (err) {
+      console.error("Firestore save error:", err);
+      toast("خطأ أثناء الحفظ في قاعدة البيانات: " + err.message);
+      return;
+    }
+  }
+
   if (old) Object.assign(old, g);
   else state.games.unshift(g);
 
   persist();
   closeM("mEdit");
-  toast("تم حفظ اللعبة بنجاح! لا تنسَ تصدير data.json للنشر");
+  render();
+  toast("تم حفظ اللعبة بنجاح في قاعدة البيانات ✨");
 }
 
-function delGame(id) {
+async function delGame(id) {
   if (!confirm("هل أنت متأكد من حذف هذه اللعبة؟")) return;
+
+  if (window.db && window.isFirebaseConfigured && window.isFirebaseConfigured()) {
+    try {
+      toast("جاري حذف اللعبة من قاعدة البيانات...");
+      await db.collection("games").doc(id).delete();
+    } catch (err) {
+      console.error("Firestore delete error:", err);
+      toast("خطأ أثناء الحذف من قاعدة البيانات: " + err.message);
+      return;
+    }
+  }
+
   state.games = state.games.filter(g => g.id !== id);
   if (currentId() === id) location.hash = "#/";
   persist();
-  toast("تم حذف اللعبة");
+  render();
+  toast("تم حذف اللعبة نهائياً");
 }
 
 function editSettings() {
@@ -1010,13 +1083,13 @@ function editSettings() {
     <input id="sTg" dir="ltr" placeholder="https://t.me/..." value="${esc(s.telegram)}">
     <label>نص حقوق الفوتر</label>
     <input id="sFoot" value="${esc(s.footer)}">
-    <button class="btn" style="width:100%;margin-top:20px" onclick="submitSettings()">حفظ الإعدادات</button>`;
+    <button class="btn" style="width:100%;margin-top:20px" onclick="submitSettings()">حفظ الإعدادات في قاعدة البيانات</button>`;
 
   openM("mEdit");
 }
 
-function submitSettings() {
-  state.settings = {
+async function submitSettings() {
+  const newSettings = {
     name: $("sName").value.trim(),
     sub: $("sSub").value.trim(),
     tagline: $("sTag").value.trim(),
@@ -1024,9 +1097,73 @@ function submitSettings() {
     telegram: $("sTg").value.trim(),
     footer: $("sFoot").value.trim()
   };
+
+  if (window.db && window.isFirebaseConfigured && window.isFirebaseConfigured()) {
+    try {
+      toast("جاري حفظ الإعدادات في قاعدة البيانات...");
+      await db.collection("settings").doc("site").set(newSettings);
+    } catch (err) {
+      console.error("Firestore settings save error:", err);
+      toast("خطأ أثناء حفظ الإعدادات: " + err.message);
+      return;
+    }
+  }
+
+  state.settings = newSettings;
   persist();
   closeM("mEdit");
-  toast("تم حفظ الإعدادات");
+  render();
+  toast("تم حفظ إعدادات الموقع بنجاح ✨");
+}
+
+async function migrateToFirebase() {
+  if (!window.db || !window.isFirebaseConfigured || !window.isFirebaseConfigured()) {
+    alert("⚠️ يرجى أولاً إدخال مفاتيح مشروع Firebase في ملف firebase-config.js وتفعيل Firestore Authentication.");
+    return;
+  }
+
+  if (!confirm("هل تريد رفع جميع الألعاب والإعدادات الحالية من data.json إلى قاعدة بيانات Firebase؟\n\nستكون بياناتك بعدها محفوظة سحابياً ومحمية بشكل كامل.")) {
+    return;
+  }
+
+  const btn = $("btnMigrate");
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "جاري النقل...";
+  }
+
+  toast("جاري نقل البيانات إلى Firebase...");
+  try {
+    let source = state;
+    try {
+      const res = await fetch("data.json?" + Date.now());
+      if (res.ok) source = await res.json();
+    } catch (e) { }
+
+    if (source.settings) {
+      await db.collection("settings").doc("site").set(source.settings);
+    }
+
+    const games = Array.isArray(source.games) ? source.games : [];
+    let count = 0;
+    for (const g of games) {
+      if (g.id) {
+        await db.collection("games").doc(g.id).set(g);
+        count++;
+      }
+    }
+
+    toast(`تم نقل البيانات بنجاح! تم رفع الإعدادات و ${count} لعبة إلى Firebase ✨`);
+    setTimeout(() => { location.reload(); }, 1200);
+  } catch (err) {
+    console.error("Migration error:", err);
+    alert("حدث خطأ أثناء نقل البيانات: " + err.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = "ترحيل data.json إلى Firebase";
+    }
+  }
 }
 
 function exportData() {
@@ -1034,7 +1171,7 @@ function exportData() {
   a.href = URL.createObjectURL(new Blob([JSON.stringify(state, null, 2)], { type: "application/json" }));
   a.download = "data.json";
   a.click();
-  toast("تم تحميل data.json — ارفعه على مستودع GitHub");
+  toast("تم تصدير نسخة احتياطية من data.json بنجاح");
 }
 
 function importData(i) {
