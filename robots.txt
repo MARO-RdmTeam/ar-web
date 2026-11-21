@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://ammar-arabzation.pages.dev/sitemap.xml
