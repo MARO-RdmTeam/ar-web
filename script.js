@@ -380,8 +380,9 @@ function renderChrome() {
   const id = currentId();
   const g = id && state.games.find(x => x.id === id);
   const site = (s.name + " " + s.sub).trim();
+  const defaultSiteTitle = "Ammar Arabic | عمار للتعريب – تعريب الألعاب";
 
-  document.title = window.ADMIN ? "لوحة الإدارة — " + site : (g ? g.title + " — " + site : site);
+  document.title = window.ADMIN ? "لوحة الإدارة — Ammar Arabic | عمار للتعريب" : (g ? `${g.title} | عمار للتعريب – Ammar Arabic` : defaultSiteTitle);
 
   // تحديث الشعار في شريط التنقل
   const navTitle = $("navTitle");
@@ -458,7 +459,7 @@ function cardHTML(g, i) {
     <a class="stretch" href="${gameHref(g.id)}" aria-label="${esc(g.title)}"></a>
     <span class="card-badge ${catClass}">${esc(badgeText)}</span>
     <div class="cover">
-      ${cover ? `<img src="${esc(cover)}" alt="${esc(g.title)}" loading="lazy" decoding="async">` : `<div class="ph">🎮</div>`}
+      ${cover ? `<img src="${esc(cover)}" alt="تعريب ${esc(g.title)} - Ammar Arabic" loading="lazy" decoding="async">` : `<div class="ph">🎮</div>`}
       <span class="card-platform-chip">${platIcon} <span>${esc(platform)}</span></span>
       <i class="shine"></i>
     </div>
@@ -466,7 +467,7 @@ function cardHTML(g, i) {
       <h3>${esc(g.title)}</h3>
       <p>${esc(d || "تعريب احترافي متكامل متوفر للتحميل المباشر.")}</p>
       <div class="card-footer">
-        <span class="card-action-link">عرض التفاصيل والتحميل ←</span>
+        <span class="card-action-link">تحميل التعريب والتفاصيل ←</span>
       </div>
     </div>
     <div class="acts">
@@ -557,13 +558,13 @@ function renderHeroSpotlight(featured) {
 
   if (!featured) {
     if (bg) bg.style.backgroundImage = "none";
-    if (title) title.textContent = (state.settings.name + " " + state.settings.sub).trim() || "عمار للتعريب";
-    if (desc) desc.textContent = state.settings.tagline || "نحو محتوى أوسع وأشمل.. نقدم لكم أفضل الترجمات للألعاب لتستمتعوا بتجربة كاملة باللغة العربية.";
+    if (title) title.textContent = "عمار للتعريب – تعريب الألعاب الاحترافي";
+    if (desc) desc.textContent = state.settings.tagline || "موقع Ammar Arabic (عمار للتعريب) هو وجهتك الأولى لتحميل تعريبات الألعاب وترجمة ألعاب الفيديو للكمبيوتر والأجهزة الذكية.";
     if (cta) {
       cta.href = "#/";
       cta.onclick = () => scrollToSection("gamesSection");
     }
-    if (badgeText) badgeText.textContent = window.ADMIN ? "لوحة التحكم" : "بوابة التعريب العربي";
+    if (badgeText) badgeText.textContent = window.ADMIN ? "لوحة التحكم" : "بوابة تعريب الألعاب";
     return;
   }
 
@@ -578,7 +579,7 @@ function renderHeroSpotlight(featured) {
     desc.textContent = d || "تعريب عربي احترافي كامل للقوائم والنصوص مع دعم كامل للخطوط الأصلية.";
   }
   if (badgeText) {
-    badgeText.textContent = featured.status ? `تعريب ${featured.status}` : "تعريب مميز";
+    badgeText.textContent = featured.status ? `تعريب ${featured.status}` : "تعريب ألعاب مميز";
   }
   if (cta) {
     cta.href = gameHref(featured.id);
@@ -679,7 +680,7 @@ function renderGame(id) {
     </div>
     <div class="wrap gv-main">
       <div class="gv-cover">
-        ${cover ? `<img src="${esc(cover)}" alt="${esc(g.title)}">` : `<div class="ph">🎮</div>`}
+        ${cover ? `<img src="${esc(cover)}" alt="تعريب لعبة ${esc(g.title)} - Ammar Arabic" loading="lazy" decoding="async">` : `<div class="ph">🎮</div>`}
       </div>
       <div class="gv-info">
         ${g.status ? `<span class="chip">${esc(g.status)}</span>` : ""}
@@ -691,17 +692,17 @@ function renderGame(id) {
   </section>
 
   <div class="wrap gv-body">
-    ${g.desc ? `<section class="panel"><h2>تفاصيل التعريب</h2><div class="desc">${fmtDesc(g.desc)}</div></section>` : ""}
+    ${g.desc ? `<section class="panel"><h2>تفاصيل ومعلومات التعريب</h2><div class="desc">${fmtDesc(g.desc)}</div></section>` : ""}
 
     ${shots.length ? `<section class="panel">
-      <h2>صور ولقطات من داخل اللعبة</h2>
+      <h2>صور ولقطات من داخل اللعبة بعد التعريب</h2>
       <div class="shots">
-        ${shots.map((u, i) => `<button class="shot" data-shot="${i}" aria-label="لقطة ${i + 1}"><img src="${esc(u)}" alt="" loading="lazy" decoding="async"></button>`).join("")}
+        ${shots.map((u, i) => `<button class="shot" data-shot="${i}" aria-label="لقطة ${i + 1}"><img src="${esc(u)}" alt="لقطة من تعريب ${esc(g.title)}" loading="lazy" decoding="async"></button>`).join("")}
       </div>
     </section>` : ""}
 
     ${links.length ? `<section class="panel" id="dl">
-      <h2>روابط التحميل المباشرة</h2>
+      <h2>روابط تحميل باتش وملفات التعريب المباشرة</h2>
       <div class="dl">
         ${links.map(l => `
         <a class="dlbtn" href="${esc(l.url)}" target="_blank" rel="noopener">
