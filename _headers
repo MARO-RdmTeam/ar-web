@@ -26,6 +26,14 @@
   Content-Type: image/x-icon
   Cache-Control: public, max-age=604800, immutable
 
+/favicon-48x48.png
+  Content-Type: image/png
+  Cache-Control: public, max-age=604800, immutable
+
+/favicon-96x96.png
+  Content-Type: image/png
+  Cache-Control: public, max-age=604800, immutable
+
 /og-image.png
   Content-Type: image/png
   Cache-Control: public, max-age=604800, immutable
